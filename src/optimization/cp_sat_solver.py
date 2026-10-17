@@ -159,6 +159,30 @@ class CPSatOptimizationSolver(SolverInterface):
                     "Mathematical infeasibility: Hard constraints cannot be satisfied with available resources."
                 )
 
+        # 7. Automated Infeasibility & Bottleneck Diagnosis
+        diagnostic_report = None
+        if unassigned or status == SolverStatus.INFEASIBLE:
+            from src.optimization.diagnostics import InfeasibilityDiagnoser
+
+            diagnostic_report = InfeasibilityDiagnoser.diagnose(
+                tasks=tasks,
+                aircraft=aircraft,
+                crew=crew,
+                airbases=airbases,
+                maintenance_windows=maintenance_windows,
+                unassigned_task_ids=unassigned,
+            )
+            infeasibility_reasons.extend(diagnostic_report.explanations)
+
+        diag_metrics = {
+            "wall_time": solver.WallTime(),
+            "user_time": solver.UserTime(),
+            "branches": solver.NumBranches(),
+            "conflicts": solver.NumConflicts(),
+        }
+        if diagnostic_report:
+            diag_metrics["diagnostic_report"] = diagnostic_report.to_dict()
+
         return OptimizationResult(
             status=status,
             objective_value=objective_val,
@@ -169,12 +193,7 @@ class CPSatOptimizationSolver(SolverInterface):
             unassigned_task_ids=unassigned,
             infeasibility_reasons=infeasibility_reasons,
             solver_name=self.solver_name,
-            diagnostic_metrics={
-                "wall_time": solver.WallTime(),
-                "user_time": solver.UserTime(),
-                "branches": solver.NumBranches(),
-                "conflicts": solver.NumConflicts(),
-            },
+            diagnostic_metrics=diag_metrics,
         )
 
     def _map_status(self, raw_status: int) -> SolverStatus:

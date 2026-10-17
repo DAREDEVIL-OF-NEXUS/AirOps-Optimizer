@@ -19,9 +19,9 @@
 | Metric | Count | Percentage |
 | :--- | :--- | :--- |
 | **Total Assigned Tasks** | 24 | 100% |
-| **Verified Complete** | 16 | 66.7% |
+| **Verified Complete** | 19 | 79.2% |
 | **In Progress** | 0 | 0% |
-| **Not Started** | 8 | 33.3% |
+| **Not Started** | 5 | 20.8% |
 
 ---
 
@@ -59,9 +59,9 @@
 
 | Task ID | Task Description | Dependencies | Status | Verification Evidence & Commit |
 | :--- | :--- | :--- | :--- | :--- |
-| **L3-01** | Implement automated constraint relaxation diagnostic routine | L2-08 | `NOT STARTED` | Expected: `src/optimization/cp_sat_solver.py` |
-| **L3-02** | Implement comparative linearized MILP model using HiGHS | L1-03 | `NOT STARTED` | Expected: `src/optimization/milp_solver.py` |
-| **L3-03** | Author unit tests for MILP solver and infeasibility reporting | L3-01, L3-02 | `NOT STARTED` | Expected: `tests/unit/test_milp_solver.py` |
+| **L3-01** | Implement automated constraint relaxation diagnostic routine | L2-08 | `VERIFIED COMPLETE` | Implemented in `src/optimization/diagnostics.py` diagnosing capability deficits, crew limits, and maintenance conflicts. |
+| **L3-02** | Implement comparative linearized MILP model using HiGHS | L1-03 | `VERIFIED COMPLETE` | Implemented in `src/optimization/milp_solver.py` via SciPy's HiGHS branch-and-cut engine. |
+| **L3-03** | Author unit tests for MILP solver and infeasibility reporting | L3-01, L3-02 | `VERIFIED COMPLETE` | 9/9 tests passing in `tests/unit/test_milp_solver.py` (total suite 32/32). |
 
 ---
 

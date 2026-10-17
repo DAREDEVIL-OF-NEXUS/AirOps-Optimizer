@@ -6,6 +6,12 @@ counterfactual replanning.
 """
 
 from src.optimization.cp_sat_solver import CPSatOptimizationSolver
+from src.optimization.diagnostics import (
+    DiagnosticBottleneck,
+    InfeasibilityDiagnoser,
+    InfeasibilityReport,
+)
+from src.optimization.milp_solver import MILPOptimizationSolver
 from src.optimization.solver_config import SolverConfig
 from src.optimization.solver_interface import (
     OptimizationResult,
@@ -16,6 +22,10 @@ from src.optimization.solver_interface import (
 
 __all__ = [
     "CPSatOptimizationSolver",
+    "DiagnosticBottleneck",
+    "InfeasibilityDiagnoser",
+    "InfeasibilityReport",
+    "MILPOptimizationSolver",
     "OptimizationResult",
     "SolverConfig",
     "SolverInterface",
