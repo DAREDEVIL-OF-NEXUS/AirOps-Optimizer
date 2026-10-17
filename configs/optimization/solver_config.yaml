@@ -1,0 +1,30 @@
+# ==============================================================================
+# AIRWISE Primary Optimization Solver Configuration
+# ==============================================================================
+
+# Target algorithm: OR_TOOLS_CP_SAT, GREEDY_BASELINE, or MILP_HIGHS
+solver_type: OR_TOOLS_CP_SAT
+
+# Maximum search duration in wall-clock seconds before returning best primal solution
+time_limit_seconds: 30.0
+
+# Number of parallel CPU threads for CP-SAT portfolio search
+num_search_workers: 8
+
+# Stream solver search progress logs to stdout (set True for debugging)
+log_search_progress: false
+
+# Pseudo-random seed for deterministic tie-breaking and search reproducibility
+random_seed: 42
+
+# Multiplier for scaling floating-point probabilities to CP-SAT integer domains
+integer_scaling_factor: 10000
+
+# Objective Penalty and Reward Weights
+weight_priority: 1000       # Reward multiplier for completing high-priority sorties
+weight_delay_minute: 10     # Linear penalty per minute of schedule delay
+weight_risk: 500            # Penalty for allocating airframes with high failure risk
+weight_churn: 250           # Regularization penalty per reassigned task in replanning
+
+# Allow solver to leave lower-priority tasks unassigned when fleet is over-constrained
+allow_partial_fulfillments: true

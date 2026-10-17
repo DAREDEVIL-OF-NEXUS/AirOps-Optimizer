@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "airops-optimizer"
+version = "0.1.0"
+description = "AIRWISE: AI-Enabled Dynamic Air Operations & Resource Optimisation"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Lakshay Bharti" },
+    { name = "Nakshatra Yadav" },
+    { name = "Nidhi Jha" }
+]
+dependencies = [
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-v --import-mode=importlib"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
