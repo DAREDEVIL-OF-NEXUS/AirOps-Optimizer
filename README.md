@@ -1,204 +1,165 @@
 # AIRWISE: AI-Enabled Dynamic Air Operations & Resource Optimisation
 
-[![Project Status: Initial Architecture & Scaffolding](https://img.shields.io/badge/Status-Phase%200%20Scaffolding-blue.svg)](COMPLETION.md)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Repository: Public](https://img.shields.io/badge/Visibility-Public-brightgreen.svg)](https://github.com/DAREDEVIL-OF-NEXUS/AirOps-Optimizer)
+[![Project Status: Phase 0 Architecture Verified](https://img.shields.io/badge/Status-Phase%200%20Verified%20Complete-brightgreen.svg)](COMPLETION.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Repository: Public](https://img.shields.io/badge/Visibility-Public-green.svg)](https://github.com/DAREDEVIL-OF-NEXUS/AirOps-Optimizer)
 [![Architecture: Modular Monolith](https://img.shields.io/badge/Architecture-Modular%20Monolith-orange.svg)](ARCHITECTURE.md)
+[![Problem Statement: SIH 26250](https://img.shields.io/badge/SIH-26250%20Air%20Power-purple.svg)](README.md)
 
 > **Repository:** [https://github.com/DAREDEVIL-OF-NEXUS/AirOps-Optimizer](https://github.com/DAREDEVIL-OF-NEXUS/AirOps-Optimizer)  
-> **System Identifier:** `AIRWISE` (`airops-optimizer`)
+> **System Identifier:** `AIRWISE` (`airops-optimizer`)  
+> **SIH Problem Title:** Air Power — Dynamic Air Operations & Resource Optimisation  
 
 ---
 
 ## 1. Executive Summary & Problem Statement
 
-Planning and dynamically adjusting complex resource allocations in aviation and fleet operations is inherently difficult. Information regarding **aircraft availability, crew qualifications, duty-time limits, maintenance bay capacity, fuel logistics, environmental weather windows, and shifting operational priorities** is frequently fragmented across siloed systems. 
+Planning and dynamically adjusting complex resource allocations in aviation fleet operations is inherently difficult. Information regarding **aircraft readiness, airframe fatigue, flight crew certifications, duty-hour limits, maintenance bay availability, runway movement slots, and weather corridors** is frequently fragmented across disconnected systems.
 
-When unexpected disruptions occur—such as sudden component degradation, adverse weather fronts, runway maintenance closures, or urgent sortie priority adjustments—human planners face high cognitive loads under severe time constraints. Standard heuristic manual scheduling often leads to cascaded flight delays, under-utilised maintenance windows, crew duty-hour violations, or sub-optimal mission completion.
+When unexpected disruptions occur—such as sudden mechanical degradation, localized severe weather fronts, runway closures, or urgent sortie priority escalations—human planners face extreme cognitive overload under severe time constraints. Manual heuristic scheduling often leads to cascaded flight delays, under-utilized maintenance slots, crew duty-hour breaches, or cancelled high-priority sorties.
 
 ### The Proposed Solution
 **AIRWISE** is an open, modular decision-support prototype engineered to:
-1. **Fuse and Validate** multi-source operational data into a coherent, canonical state model.
-2. **Predict Future Operational Bottlenecks** (equipment failure probability, weather disruption risk, turnaround delays) using calibrated predictive analytics.
-3. **Optimise Resource Allocation** using a formal mathematical constraint programming engine (Google OR-Tools CP-SAT) paired with a transparent greedy baseline.
-4. **Explain Recommendations**, detailing which constraints are binding, which trade-offs were negotiated, and why an allocation was chosen.
-5. **Facilitate Interactive "What-If" Counterfactual Simulation**, enabling operations directors to inject disruptions, re-optimise, and inspect comparative deltas before committing operational plans.
+1. **Fuse & Validate** multi-source operational data into a strongly-typed, canonical in-memory state container.
+2. **Predict Future Disruptions** (unscheduled maintenance failure risk, flight turnaround delays) using calibrated tabular machine learning models (LightGBM).
+3. **Optimise Multi-Resource Allocations** using formal constraint programming (Google OR-Tools CP-SAT) with interval disjunctions and cumulative movement limits, rigorously benchmarked against an independent Greedy baseline.
+4. **Independently Audit Feasibility**, mathematically verifying that zero hard physical or regulatory constraints are violated.
+5. **Facilitate Interactive "What-If" Counterfactual Simulation**, allowing operators to inject hypothetical disruptions into isolated sandboxes, dynamically replan, and inspect comparative deltas before committing operational orders.
 
 ---
 
 ## 2. Core Engineering Principles
 
-* **Separation of Prediction and Optimisation:** Machine learning estimates *what is likely to happen* (probabilities of delay, maintenance failure risks, weather transitions). The mathematical optimisation solver determines *what actions to take* by maximising utility subject to hard physical and legal constraints. Predictive models are never used as a substitute for constraint solvers.
-* **Rigorous Distinction Between Hard Constraints and Soft Objectives:**
-  * *Hard Constraints (Inviolable Feasibility):* Crew rest regulations, aircraft payload limits, qualification matchings, non-overlapping runway schedules, and maintenance bay capacity limits.
-  * *Soft Objectives (Preference Trade-offs):* Minimising delay minutes, maximising high-priority mission fulfillment, minimising crew deadhead transfers, and reducing operational friction.
-* **Deterministic, Coherent Synthetic Data:** Realistic operational schedules generated via seedable, time-aware generative models with referential integrity. No random, unlinked tables.
-* **Human-Centred Decision Support:** The software advises and explains; it does not trigger autonomous real-world actions. All outputs are neutral, non-tactical, and non-classified.
-* **Reproducibility & Transparent Benchmarking:** Formal metrics, seed logging, exact parameter auditing, and baselines (CP-SAT vs. Greedy vs. Unoptimised) without unsubstantiated claims.
+* **Separation of Prediction and Optimisation:** Machine learning estimates *probabilities and delays*. The formal constraint solver determines *provably feasible allocations* maximizing utility subject to inviolable constraints. Predictive models are never used as a substitute for constraint solvers.
+* **Inviolable Hard Constraints vs. Soft Preferences:**
+  * *Hard Constraints (Inviolable):* Non-overlapping aircraft sorties (`AddNoOverlap`), crew mandatory rest intervals, certification matching, and hourly runway throughput limits.
+  * *Soft Objectives (Trade-offs):* Maximizing high-priority sortie fulfillment, minimizing schedule delays, minimizing crew overtime, and penalizing plan churn.
+* **Deterministic Synthetic Operational Data (Option B Hybrid Strategy):** Operational schedules are synthesized procedurally with 100% referential integrity and seed-based reproducibility. External open datasets (NASA C-MAPSS, US BTS) are used strictly as offline ML benchmarks.
+* **Human-Centred Decision Support:** The software advises, explains, and diffs contingency plans; it does not autonomously execute real-world operations or integrate with tactical weapons systems.
 
 ---
 
-## 3. Synthetic Data & Safety Disclaimer
+## 3. High-Level System Architecture
 
-> [!IMPORTANT]
-> **Synthetic Operational Data Notice:**  
-> AIRWISE is developed entirely using generated synthetic datasets, idealized airspace models, and generic civil/operational logistical parameters. It **does not** contain, ingest, or depend upon classified, confidential, proprietary, or actual military operational data. No operational combat tactics, weapon delivery envelopes, or military command-and-control integrations are implemented.
-
----
-
-## 4. System Architecture & Component Topology
-
-AIRWISE is structured as a **Modular Monolith**, ensuring low deployment overhead, strict domain boundaries, and high computational efficiency.
+AIRWISE is implemented as a **Modular Monolith** organized into four functional tiers across 21 logical components:
 
 ```mermaid
 flowchart TD
-    subgraph DataLayer ["Data & State Layer"]
-        SSG["Synthetic Scenario Generator"] --> IDV["Ingestion & Validation Engine"]
-        IDV --> COS["Canonical Operational State"]
-        COS --> DB[(SQLite / PostgreSQL Persistence)]
+    subgraph DataTier ["1. Data & State Tier (Nakshatra Yadav)"]
+        AUDIT["Dataset Audit & Adapters"] --> GEN["Synthetic Scenario Generator"]
+        GEN --> STATE["Canonical Operational State"]
+        EVENT["Event Fusion & Replay Engine"] <--> STATE
     end
 
-    subgraph IntelligenceLayer ["Intelligence & Decision Layer"]
-        COS --> PAS["Predictive Analytics Service (LightGBM/RF)"]
-        COS --> CFM["Constraint & Feasibility Model"]
-        PAS --> CFM
-        CFM --> OS["Optimisation Service (OR-Tools CP-SAT)"]
-        CFM --> BL["Greedy Baseline Algorithm"]
-        OS --> EME["Explanation & Metrics Engine"]
-        BL --> EME
+    subgraph AlgoTier ["2. Optimisation & ML Tier (Lakshay Bharti)"]
+        STATE --> ML["Predictive Analytics (LightGBM)"]
+        STATE --> CPSAT["OR-Tools CP-SAT Optimiser"]
+        ML -->|"Failure Risks & Delay Buffers"| CPSAT
     end
 
-    subgraph SimulationLayer ["Simulation & What-If Engine"]
-        COS -.-> WIE["Counterfactual What-If Sandbox"]
-        WIE --> CFM
+    subgraph EvalTier ["3. Validation & Simulation Tier (Nidhi Jha)"]
+        CPSAT --> AUDITOR["Independent Feasibility Auditor"]
+        STATE --> GREEDY["Greedy Baseline Allocator"]
+        GREEDY --> AUDITOR
+        STATE -.-> SANDBOX["What-If Counterfactual Sandbox"]
+        SANDBOX --> CPSAT
+        SANDBOX --> DIFF["Plan Diff Analyzer"]
     end
 
-    subgraph PresentationLayer ["Interface & Delivery Layer"]
-        EME --> API["FastAPI Modular Application"]
-        DB --> API
-        API --> FE["React + TypeScript + Vite Dashboard"]
+    subgraph DeliveryTier ["4. API & Integration Tier"]
+        STATE --> API["FastAPI Modular Application"]
+        CPSAT --> API
+        DIFF --> API
+        API <-->|"REST OpenAPI 3.1"| FRONTEND["React Dashboard (External Team)"]
     end
 ```
 
-For complete technical specifications, mathematical formulations, and data flow sequences, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For complete technical specifications, mathematical formulations, and diagrams, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
-## 5. Technology Stack
+## 4. Three-Person Workstream Ownership Model
 
-| Domain | Technology / Library | Rationale |
-| :--- | :--- | :--- |
-| **Backend Framework** | Python 3.11+, FastAPI, Uvicorn | High performance, asynchronous I/O, native OpenAPI docs, strict typing. |
-| **Data Validation** | Pydantic v2 | High-throughput schema validation and data integrity enforcement. |
-| **Persistence** | SQLAlchemy 2.0, SQLite / PostgreSQL | Robust ORM with schema migrations; SQLite for local runs, PostgreSQL for production. |
-| **Optimisation Solver** | Google OR-Tools (CP-SAT) | State-of-the-art constraint programming solver for scheduling and assignment. |
-| **Optimisation Baseline**| Custom Deterministic Greedy Allocator | Transparent, non-vacuous comparative baseline for benchmarks. |
-| **Machine Learning** | scikit-learn, LightGBM | Calibrated probabilistic classification and regression without unnecessary deep-learning bloat. |
-| **Data Manipulation** | NumPy, pandas | Vectorized time-series and schedule transformation. |
-| **Frontend UI** | React 18, TypeScript, Vite | Fast, typed, reactive component hierarchy for high-density operational data. |
-| **Styling & Icons** | Tailwind CSS, Lucide React | Modern, responsive, clean enterprise operations design system. |
-| **Data Visualisation** | Recharts, Plotly.js | Interactive Gantt schedules, resource utilisation bars, and Pareto trade-off curves. |
-| **Quality & Testing** | pytest, pytest-cov, Ruff, mypy, ESLint | Strict linting, formatting, static analysis, and multi-tier test automation. |
+The core engineering workload outside the frontend is partitioned into three mutually exclusive, collectively exhaustive workstreams:
 
----
-
-## 6. Project Implementation Status
-
-The project is executed in disciplined, auditable phases.
-
-* **Phase 0 — Repository and Project Foundations:** **VERIFIED COMPLETE**  
-  * Architecture frozen, master plans established, baseline repository structure configured.
-* **Phase 1 — Domain Model & Synthetic Scenario Generation:** Planned (Next Phase).
-* **Phase 2 — State Management & Data Fusion:** Planned.
-* **Phase 3 — Feasibility Model & Optimisation Baseline:** Planned.
-* **Phase 4 — Predictive Analytics Service:** Planned.
-* **Phase 5 — Scenario Simulation & Re-optimisation (What-If Engine):** Planned.
-* **Phase 6 — REST API & Persistence Layer:** Planned.
-* **Phase 7 — Frontend Decision-Support Dashboard:** Planned.
-* **Phase 8 — Integrated Validation & Benchmarking Experiments:** Planned.
-* **Phase 9 — Demonstration Readiness & Documentation Finalisation:** Planned.
-
-Track detailed live task status in [COMPLETION.md](COMPLETION.md).
-
----
-
-## 7. Setup & Development Instructions
-
-### Prerequisites
-- **Python:** 3.11 or higher
-- **Node.js:** 18.x or 20.x LTS
-- **Package Managers:** `pip` (or `uv`) and `npm`
-- **Git**
-
-### Environment Configuration
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/DAREDEVIL-OF-NEXUS/AirOps-Optimizer.git
-   cd AirOps-Optimizer
-   ```
-2. Copy environment template:
-   ```bash
-   cp .env.example .env
-   ```
-
-### Backend Setup (Phase 1+)
-```bash
-# Create and activate virtual environment
-python -m venv .venv
-
-# Windows:
-.venv\Scripts\Activate.ps1
-# Linux / macOS:
-source .venv/bin/activate
-
-# Upgrade pip and install core dependencies
-pip install --upgrade pip
-pip install -r requirements.txt  # (Created in Phase 1)
+```mermaid
+flowchart LR
+    LAK["Lakshay Bharti<br/><b>Optimisation & ML Core</b><br/>(22 Days / 55 SP)"]
+    NAK["Nakshatra Yadav<br/><b>Data & State Foundation</b><br/>(21 Days / 52 SP)"]
+    NID["Nidhi Jha<br/><b>Validation & Simulation</b><br/>(21.5 Days / 53 SP)"]
+    
+    NAK -->|"Domain Schemas & State"| LAK
+    NAK -->|"Scenarios & Fixtures"| NID
+    LAK -->|"Solver & ML Contracts"| NID
+    NID -->|"Audits & Benchmarks"| LAK
 ```
 
-### Frontend Setup (Phase 7+)
-```bash
-cd frontend
-npm install
-npm run dev
-```
+* **[Lakshay.md](Lakshay.md) — Lakshay Bharti (Optimisation & ML Lead):**
+  - Owns mathematical formulations, Google OR-Tools CP-SAT solver, optional MILP comparison, predictive modeling pipeline (LightGBM), probability calibration, and prediction-aware optimization.
+  - Directories: `src/optimization/`, `src/prediction/`, `configs/optimization/`, `configs/models/`.
+  - Feature Branch: `features/lakshay-optimization-ml`.
+
+* **[Nakshatra.md](Nakshatra.md) — Nakshatra Yadav (Data Foundation Lead):**
+  - Owns external dataset auditing, data security threat modeling, Pydantic v2 domain schemas, procedural synthetic scenario generator, and in-memory canonical state fusion engine.
+  - Directories: `src/domain/`, `src/data/`, `src/generator/`, `src/state/`, `data/scenarios/`.
+  - Feature Branch: `features/nakshatra-data-state`.
+
+* **[Nidhi.md](Nidhi.md) — Nidhi Jha (Validation & Simulation Lead):**
+  - Owns independent feasibility auditing, transparent Greedy baseline solver, counterfactual What-If sandbox, disruption mutation operators, Plan Diff Analyzer, and scientific benchmarking harness.
+  - Directories: `src/baselines/`, `src/evaluation/`, `src/simulation/`, `experiments/`, `tests/integration/`.
+  - Feature Branch: `features/nidhi-validation-simulation`.
+
+*The frontend is handled by external teammates and is outside the implementation scope of these three workstreams.*
 
 ---
 
-## 8. Verification & Testing Instructions
+## 5. Master Implementation Roadmap (Phases 0 to 12)
 
-Once test suites are established in subsequent phases:
+The project is structured into 13 sequential implementation phases:
 
-```bash
-# Run backend unit, integration, and algorithmic benchmarks:
-pytest -v --cov=src --cov-report=term-missing
+* **Phase 0 — Repository Foundations & Planning Revision:** **VERIFIED COMPLETE**
+* **Phase 1 — Dataset Discovery, Audit, and Selection:** Planned (`features/nakshatra-data-state`).
+* **Phase 2 — Formal Problem Definition & Mathematical Formulation:** Planned (`features/lakshay-optimization-ml`).
+* **Phase 3 — Canonical Domain Model & Data Contracts:** Planned (`features/nakshatra-data-state`).
+* **Phase 4 — Synthetic Scenario & Event Generation:** Planned (`features/nakshatra-data-state`).
+* **Phase 5 — State Management, Ingestion, Fusion, and Replay:** Planned (`features/nakshatra-data-state`).
+* **Phase 6 — Independent Feasibility Checker & Baseline Allocators:** Planned (`features/nidhi-validation-simulation`).
+* **Phase 7 — Constraint-Programming Optimiser & Solver Validation:** Planned (`features/lakshay-optimization-ml`).
+* **Phase 8 — Prediction Target Design & Reproducible Training Pipeline:** Planned (`features/lakshay-optimization-ml`).
+* **Phase 9 — Predictive-Model Benchmarking & Selection:** Planned (`features/lakshay-optimization-ml`).
+* **Phase 10 — Prediction-Aware Rolling-Horizon Optimisation:** Planned (Lakshay & Nidhi).
+* **Phase 11 — What-If Simulation, Robustness, & Integrated Evaluation:** Planned (`features/nidhi-validation-simulation`).
+* **Phase 12 — Core API Contracts, Reproducible Release, & Frontend Handoff:** Planned (All Leads).
 
-# Run code style formatting & static type checking:
-ruff check .
-mypy src
-
-# Run frontend test suite:
-cd frontend && npm run test
-```
-
----
-
-## 9. Comprehensive Documentation Index
-
-All technical specifications are version-controlled within the repository:
-
-* [ARCHITECTURE.md](ARCHITECTURE.md) — Comprehensive technical architecture, entity diagrams, mathematical formulations, and data flow.
-* [ROADMAP.md](ROADMAP.md) — Multi-milestone strategic delivery roadmap with risk analysis.
-* [PHASES.md](PHASES.md) — Granular, step-by-step implementation phases with explicit acceptance criteria.
-* [COMPLETION.md](COMPLETION.md) — Living audit checklist tracking task states, dependencies, and verification artifacts.
-* [REQUIREMENTS.md](REQUIREMENTS.md) — Functional (FR-xxx) and Non-Functional (NFR-xxx) requirements specifications.
-* [DECISIONS.md](DECISIONS.md) — Architectural Decision Records (ADR-001 through ADR-007).
-* [CONTRIBUTING.md](CONTRIBUTING.md) — Code standards, commit hygiene, PR checklists, and security practices.
+Detailed task breakdowns are maintained in [PHASES.md](PHASES.md) and live task audit logs in [COMPLETION.md](COMPLETION.md).
 
 ---
 
-## 10. Known Limitations (Current Phase)
+## 6. Comprehensive Documentation Index
 
-1. **Phase 0 Status:** The codebase currently contains repository foundations, configuration specifications, and comprehensive architectural documentation. Application source code (`src/` and `frontend/`) will be introduced systematically starting in Phase 1.
-2. **Synthetic Simplifications:** Airspace routing is modelled as discrete operational nodes and flight legs rather than continuous 4D trajectory radar feeds.
-3. **Hardware Solvers:** Optimisation relies on CP-SAT multi-core CPU solver capabilities; GPU acceleration is neither required nor currently targeted.
+All architectural blueprints, design documents, and governance files are version-controlled within the repository:
+
+* [ARCHITECTURE.md](ARCHITECTURE.md) — Authoritative technical blueprint with 21 components, 13 Mermaid diagrams, and mathematical formulations.
+* [ROADMAP.md](ROADMAP.md) — Milestone specifications (M0 through M12) and risk registers.
+* [PHASES.md](PHASES.md) — Step-by-step operational phase specifications with acceptance criteria and quality gates.
+* [COMPLETION.md](COMPLETION.md) — Living master task audit register tracking task statuses.
+* [REQUIREMENTS.md](REQUIREMENTS.md) — Functional (`FR-001`–`FR-015`) and non-functional (`NFR-001`–`NFR-008`) specifications.
+* [DECISIONS.md](DECISIONS.md) — Architectural decision records (ADR-001 through ADR-012).
+* [CONTRIBUTING.md](CONTRIBUTING.md) — Workstream rules, branching hygiene, code standards, and security protocols.
+* [docs/data-audit.md](docs/data-audit.md) — Formal audit of candidates A–H, security threat model, and Option B hybrid decision.
+* [docs/optimisation-design.md](docs/optimisation-design.md) — Detailed CP-SAT interval scheduling formulation, integer scaling, and baselines.
+* [docs/prediction-design.md](docs/prediction-design.md) — Machine learning targets, temporal splits, calibration, and value experiment.
+* [docs/data-model.md](docs/data-model.md) — Pydantic domain models, physical units, timestamps, and event envelopes.
+* [docs/testing-strategy.md](docs/testing-strategy.md) — Test pyramid, domain verification specifications, and quality gates.
+* [docs/workstream-ownership.md](docs/workstream-ownership.md) — Master task-to-owner matrix, effort estimates, and integration sequence.
+* [Lakshay.md](Lakshay.md) — Individual workstream ownership specification for Lakshay Bharti.
+* [Nakshatra.md](Nakshatra.md) — Individual workstream ownership specification for Nakshatra Yadav.
+* [Nidhi.md](Nidhi.md) — Individual workstream ownership specification for Nidhi Jha.
+
+---
+
+## 7. Synthetic Data & Operational Security Disclaimer
+
+> [!IMPORTANT]
+> **Synthetic Operational Data Notice:**  
+> AIRWISE is developed entirely using generated synthetic datasets, idealized airspace models, and generic civil/operational logistical parameters. It **does not** contain, ingest, or depend upon classified, confidential, proprietary, or actual military operational data. No combat tactics, weapon delivery envelopes, or military command-and-control integrations are implemented.

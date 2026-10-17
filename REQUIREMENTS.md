@@ -1,173 +1,137 @@
 # AIRWISE Requirements Specification
 
-## 1. Overview & Classification
-
-This document specifies the prioritized Functional Requirements (`FR-xxx`) and Non-Functional Requirements (`NFR-xxx`) governing the AIRWISE system.
-
-### Priority Levels
-* **`P0 - Mandatory MVP`**: Essential for initial functional demonstrator verification.
-* **`P1 - High Priority`**: Required for comprehensive scientific benchmarking and interactive usability.
-* **`P2 - Medium Priority`**: Enhancements for advanced operational workflows and resilience.
-* **`P3 - Low / Future`**: Post-MVP explorations and extensions.
+**Project:** AIRWISE — AI-Enabled Dynamic Air Operations & Resource Optimisation  
+**SIH Problem Statement:** SIH 26250  
+**Document Status:** Complete & Verified Baseline  
+**Authors & Leads:** Lakshay Bharti, Nakshatra Yadav, Nidhi Jha  
 
 ---
 
-## 2. Functional Requirements (FR)
+## 1. Functional Requirements (FR)
 
-### Data Synthesis & Domain Modeling
+### Data Engineering & Synthetic Generation (Nakshatra Yadav)
 
-#### `FR-001` Procedural Scenario Synthesis
+#### `FR-001` External Dataset Auditing & Safe Ingestion
 * **Priority:** `P0 - Mandatory MVP`
-* **Description:** The system must generate self-consistent, deterministic synthetic operational scenarios parameterized by random seed, airbase count, aircraft count, and task volume.
-* **Rationale:** Eliminates reliance on classified or proprietary military datasets while providing reproducible testbeds.
-* **Acceptance Criteria:** Given seed $S$, identical output JSON is generated. Referential integrity between all assets, locations, and tasks is 100%.
-* **Verification Method:** Automated unit tests asserting byte-identical output across repeated executions.
-* **Dependencies:** None.
+* **Description:** The system must inspect external benchmark datasets (4TU, NASA, BTS) against documented SHA-256 hashes, enforcing strict file size caps (<50MB) and directory traversal guards.
+* **Acceptance Criteria:** Any file exceeding 50 MB uncompressed or containing relative path traversal (`../`) is quarantined safely without crashing.
+* **Verification Method:** Unit tests in `tests/unit/test_safe_ingestion.py`.
 
-#### `FR-002` Canonical Operational State Representation
+#### `FR-002` Strongly-Typed Canonical Domain Modeling
 * **Priority:** `P0 - Mandatory MVP`
-* **Description:** The system must maintain an in-memory, timestamped canonical state of all operational assets, runway statuses, and crew rosters.
-* **Rationale:** Provides a unified source of truth for downstream predictive and optimization modules.
-* **Acceptance Criteria:** State can be queried by entity ID in $O(1)$ time and serialized to JSON without circular references.
-* **Verification Method:** Automated unit tests for entity insertion, lookup, and state snapshotting.
-* **Dependencies:** `FR-001`.
+* **Description:** The system must model all operational entities (`Airbase`, `Runway`, `AirframeType`, `Aircraft`, `CrewMember`, `OperationalTask`, `WeatherWindow`) using Pydantic v2 schemas with explicit physical units.
+* **Acceptance Criteria:** Negative capacities, inverted time windows ($LST < EST$), and invalid identifier formats are rejected with descriptive validation errors.
+* **Verification Method:** Unit tests in `tests/unit/test_domain_models.py`.
 
-#### `FR-003` Multi-Source Data Fusion & Ingestion
-* **Priority:** `P1 - High Priority`
-* **Description:** The system must ingest simulated asynchronous event feeds (weather warnings, maintenance logs) and resolve conflicts deterministically.
-* **Rationale:** Simulates real-world operational environments where status updates arrive from disparate channels.
-* **Acceptance Criteria:** Out-of-order events processed gracefully; highest-precedence source wins upon conflict.
-* **Verification Method:** Integration test injecting out-of-order synthetic event streams.
-* **Dependencies:** `FR-002`.
+#### `FR-003` Deterministic Procedural Scenario Generation
+* **Priority:** `P0 - Mandatory MVP`
+* **Description:** The system must synthesize operational scenarios across configurable scales (Small: 10 sorties to Large: 200 sorties) controlled by integer pseudo-random seeds.
+* **Acceptance Criteria:** Identical seed produces byte-identical output JSON; 100% referential integrity across assets, crews, and locations (0 dangling keys).
+* **Verification Method:** Unit tests in `tests/unit/test_generator_reproducibility.py`.
+
+#### `FR-004` In-Memory Canonical Operational State & Snapshotting
+* **Priority:** `P0 - Mandatory MVP`
+* **Description:** The system must maintain an in-memory, thread-safe operational state container supporting $O(1)$ entity retrieval by ID and deep-copy snapshots.
+* **Acceptance Criteria:** Entity lookups complete in $< 1.0$ms; state snapshots clone in $< 5.0$ms for 500 entities.
+* **Verification Method:** Unit tests in `tests/unit/test_state_management.py`.
+
+#### `FR-005` Data Fusion & Deterministic Event Replay
+* **Priority:** `P0 - Mandatory MVP`
+* **Description:** The system must ingest asynchronous operational events (`AircraftGrounded`, `RunwayClosed`), ordering them chronologically and resolving conflicts deterministically.
+* **Acceptance Criteria:** Out-of-order event replay produces an identical final state hash as chronological replay.
+* **Verification Method:** Unit tests in `tests/unit/test_state_replay.py`.
 
 ---
 
-### Predictive Analytics
+### Feasibility, Optimisation & Evaluation (Lakshay Bharti & Nidhi Jha)
 
-#### `FR-004` Unscheduled Maintenance Risk Prediction
+#### `FR-006` Independent Feasibility Auditing
 * **Priority:** `P0 - Mandatory MVP`
-* **Description:** The system must predict the probability $[0.0, 1.0]$ that an airframe will require unscheduled maintenance before completing its next scheduled sortie.
-* **Rationale:** Proactively avoids scheduling aircraft at high risk of in-flight or pre-flight aborts.
-* **Acceptance Criteria:** Model achieves ROC-AUC $\ge 0.75$ and Brier score $\le 0.18$ on out-of-sample synthetic evaluation data.
-* **Verification Method:** Offline model validation script with strict temporal train/test split.
-* **Dependencies:** `FR-002`.
+* **Owner:** Nidhi Jha
+* **Description:** The system must independently audit candidate schedules against all hard physical/regulatory constraints without relying on solver variables.
+* **Acceptance Criteria:** Injected overlapping sorties, unqualified crew, or duty-hour breaches are flagged with 100% precision and recall.
+* **Verification Method:** Unit tests in `tests/unit/test_feasibility_auditor.py`.
 
-#### `FR-005` Turnaround Delay Estimation
-* **Priority:** `P1 - High Priority`
-* **Description:** The system must estimate ground turnaround delay (in minutes) based on airbase congestion, weather conditions, and aircraft type.
-* **Rationale:** Allows solver to insert dynamic turnaround buffers rather than static estimates.
-* **Acceptance Criteria:** Regression MAE $\le 12$ minutes against ground-truth synthetic simulation.
-* **Verification Method:** Cross-validation testing on synthetic historical logs.
-* **Dependencies:** `FR-002`.
+#### `FR-007` Deterministic Greedy Baseline Allocator
+* **Priority:** `P0 - Mandatory MVP`
+* **Owner:** Nidhi Jha
+* **Description:** The system must implement a transparent, deterministic Earliest-Deadline-First greedy allocator to serve as an honest comparative benchmark.
+* **Acceptance Criteria:** Produces a valid (feasible or partial) allocation in $< 50$ms for 100 tasks on standard CPU.
+* **Verification Method:** Unit tests in `tests/unit/test_baselines.py`.
+
+#### `FR-008` Constraint Satisfaction Optimization (Google OR-Tools CP-SAT)
+* **Priority:** `P0 - Mandatory MVP`
+* **Owner:** Lakshay Bharti
+* **Description:** The system must solve the multi-resource allocation and scheduling problem using Google OR-Tools CP-SAT, enforcing interval disjunctions and cumulative runway slots.
+* **Acceptance Criteria:** Zero hard constraint violations verified by the independent auditor; CP-SAT objective $\ge$ Greedy baseline across 100% of benchmark scenarios.
+* **Verification Method:** Benchmark comparison in `tests/unit/test_optimization_solver.py`.
+
+#### `FR-009` Scaled Integer Objective & Timeout Handling
+* **Priority:** `P0 - Mandatory MVP`
+* **Owner:** Lakshay Bharti
+* **Description:** The solver must scale continuous probabilities and penalties to integer CP-SAT coefficients ($K_{\text{scale}} = 10,000$) and enforce strict search timeouts (`time_limit_seconds ± 0.5s`).
+* **Acceptance Criteria:** Terminating at timeout returns best primal solution with audited optimality gap without crashing or hanging.
+* **Verification Method:** Unit tests in `tests/unit/test_solver_timeout.py`.
 
 ---
 
-### Mathematical Optimisation
+### Predictive Analytics & Integration (Lakshay Bharti & Nidhi Jha)
 
-#### `FR-006` Constraint Satisfaction Optimization (CP-SAT)
+#### `FR-010` Feature Pipeline with Strict Temporal Guards
 * **Priority:** `P0 - Mandatory MVP`
-* **Description:** The system must solve the task assignment and scheduling problem using Google OR-Tools CP-SAT, enforcing all hard constraints.
-* **Rationale:** Ensures computed schedules are legally and physically feasible.
-* **Acceptance Criteria:** Zero overlapping task assignments on any airframe; zero crew rest violations; solver respects configurable search timeout.
-* **Verification Method:** Automated feasibility audit test suite asserting 0 hard constraint violations.
-* **Dependencies:** `FR-002`, `FR-004`.
+* **Owner:** Lakshay Bharti
+* **Description:** The system must extract asset fatigue and environmental features strictly using events with $t \le t_{\text{cut}}$, preventing lookahead leakage.
+* **Acceptance Criteria:** Unit test asserts zero future timestamp observations in training feature matrices.
+* **Verification Method:** Unit tests in `tests/unit/test_leakage_guard.py`.
 
-#### `FR-007` Heuristic Baseline Allocator
+#### `FR-011` Calibrated Predictive Maintenance & Turnaround Delay Models
 * **Priority:** `P0 - Mandatory MVP`
-* **Description:** The system must implement a transparent, deterministic greedy heuristic allocator operating on the identical problem interface.
-* **Rationale:** Provides an honest, non-vacuous benchmark against which the CP-SAT solver's performance is evaluated.
-* **Acceptance Criteria:** Produces a feasible (or partially unassigned) schedule in $< 500$ms for 100 tasks.
-* **Verification Method:** Unit test comparing greedy output against CP-SAT output.
-* **Dependencies:** `FR-006`.
+* **Owner:** Lakshay Bharti
+* **Description:** The system must train and calibrate LightGBM models predicting unscheduled failure probability ($P(\text{failure})$) and turnaround delay minutes ($E[\text{delay}]$).
+* **Acceptance Criteria:** Classifier achieves $\text{ROC-AUC} \ge 0.75$ and Brier score $\le 0.15$; inference latency $< 20$ms on CPU.
+* **Verification Method:** Unit tests in `tests/unit/test_prediction_service.py`.
 
-#### `FR-008` Explanation & Infeasibility Diagnosis
-* **Priority:** `P1 - High Priority`
-* **Description:** The system must explain why specific tasks were delayed or left unfulfilled, identifying binding constraints (e.g. lack of qualified crew, runway capacity exhausted).
-* **Rationale:** Operators require transparent rationales to trust automated decision-support recommendations.
-* **Acceptance Criteria:** Every unassigned task in an output plan is accompanied by a structured explanation code and resource bottleneck diagnosis.
-* **Verification Method:** Automated assertion on over-constrained scenario instances.
-* **Dependencies:** `FR-006`.
+#### `FR-012` Prediction-Aware Rolling-Horizon Optimization
+* **Priority:** `P0 - Mandatory MVP`
+* **Owner:** Lakshay Bharti & Nidhi Jha
+* **Description:** The system must inject calibrated failure risk penalties and dynamic turnaround buffers into the optimization solver, proving downstream operational benefits.
+* **Acceptance Criteria:** Benchmarks show $\ge 30\%$ reduction in mission aborts and $\ge 20\%$ reduction in cascaded delays compared to reactive scheduling.
+* **Verification Method:** Experimental evaluation report in `experiments/reports/prediction_value.md`.
 
 ---
 
-### Simulation & What-If Engine
+### Simulation, API & Delivery (Nidhi Jha & Nakshatra Yadav)
 
-#### `FR-009` Isolated Counterfactual Branching
+#### `FR-013` Counterfactual What-If Sandbox & Plan Diff Analyzer
 * **Priority:** `P0 - Mandatory MVP`
-* **Description:** The system must allow users to clone an existing operational plan into an isolated sandbox, inject disruptions, and re-optimize without mutating the baseline plan.
-* **Rationale:** Core capability allowing planners to test contingencies risk-free.
-* **Acceptance Criteria:** Cloned sandbox modification results in zero memory or database alterations to the original scenario.
-* **Verification Method:** Unit test inspecting deep-equality of original scenario before and after sandbox execution.
-* **Dependencies:** `FR-002`, `FR-006`.
+* **Owner:** Nidhi Jha
+* **Description:** The system must clone operational states into an isolated sandbox, apply disruption operators (`GroundAircraft`, `CloseRunway`), re-optimize, and output structured schedule diffs.
+* **Acceptance Criteria:** Sandbox mutation causes zero modifications to the baseline plan; diff analyzer details exact reassignments and delay shifts.
+* **Verification Method:** Unit tests in `tests/unit/test_what_if_engine.py`.
 
-#### `FR-010` Plan Differential Analyzer
+#### `FR-014` Asynchronous REST Application Programming Interface
 * **Priority:** `P0 - Mandatory MVP`
-* **Description:** The system must compute a structured diff between the original plan and the re-optimized plan, highlighting reassignments, delay shifts, and canceled tasks.
-* **Rationale:** Planners need to instantly comprehend the ripple effect of a disruption.
-* **Acceptance Criteria:** Output JSON explicitly details added, removed, and shifted flight legs with delta KPI metrics.
-* **Verification Method:** Unit test verifying delta calculations against known synthetic mutations.
-* **Dependencies:** `FR-009`.
+* **Owner:** Nakshatra Yadav
+* **Description:** The system must expose all core capabilities (scenarios, state, optimization, simulation) via typed FastAPI endpoints adhering to OpenAPI 3.1.
+* **Acceptance Criteria:** Endpoints return valid HTTP status codes and strict Pydantic schemas; sub-100ms response time for state and diff lookups.
+* **Verification Method:** Integration tests in `tests/integration/test_api_endpoints.py`.
+
+#### `FR-015` Frontend Integration Contract Handoff
+* **Priority:** `P0 - Mandatory MVP`
+* **Owner:** Lakshay Bharti
+* **Description:** The system must deliver frozen, typed API contracts, TypeScript type definitions, and an OpenAPI schema export for the external frontend team.
+* **Acceptance Criteria:** Complete `docs/FRONTEND_HANDOFF.md` and `openapi.json` verified against frontend data requirements.
+* **Verification Method:** Automated contract validation in `tests/integration/test_frontend_contracts.py`.
 
 ---
 
-### Delivery, API & User Interface
+## 2. Non-Functional Requirements (NFR)
 
-#### `FR-011` RESTful Application Programming Interface
-* **Priority:** `P0 - Mandatory MVP`
-* **Description:** The system must expose all core operations (scenario generation, state retrieval, optimization, simulation) via a typed FastAPI interface.
-* **Rationale:** Decouples UI and automation scripts from core domain logic.
-* **Acceptance Criteria:** All endpoints conform to OpenAPI 3.1 standards with valid Pydantic validation schemas.
-* **Verification Method:** Automated `pytest` suite using FastAPI `TestClient`.
-* **Dependencies:** `FR-001` through `FR-010`.
-
-#### `FR-012` Interactive Operations Dashboard
-* **Priority:** `P1 - High Priority`
-* **Description:** The system must provide a web dashboard featuring Gantt schedules, resource health metrics, prediction badges, and what-if comparison views.
-* **Rationale:** Human-in-the-loop operational decision support.
-* **Acceptance Criteria:** Dashboard renders in modern web browsers (Chrome, Firefox, Edge) without client-side console errors.
-* **Verification Method:** End-to-end browser component tests.
-* **Dependencies:** `FR-011`.
-
----
-
-## 3. Non-Functional Requirements (NFR)
-
-### Performance & Scalability
-
-#### `NFR-001` Optimization Runtime Bound
-* **Priority:** `P0 - Mandatory MVP`
-* **Description:** The solver must terminate and return the best-found feasible solution within a user-configurable time limit (default 30 seconds for scenarios up to 100 tasks).
-* **Verification:** Benchmark execution with wall-clock timing assertions.
-
-#### `NFR-002` State Query Latency
-* **Priority:** `P0 - Mandatory MVP`
-* **Description:** In-memory canonical state inspection and serialization must complete in $< 50$ms for up to 1,000 operational entities.
-* **Verification:** Performance profiling in unit tests.
-
----
-
-### Reliability & Integrity
-
-#### `NFR-003` Determinism & Reproducibility
-* **Priority:** `P0 - Mandatory MVP`
-* **Description:** Given an identical random seed, scenario parameters, and solver configuration, the system must produce identical outputs across executions.
-* **Verification:** CI test asserting checksum equality of scenario generations and optimization results across repeated runs.
-
-#### `NFR-004` Persistence Portability
-* **Priority:** `P1 - High Priority`
-* **Description:** The persistence layer must function out-of-the-box using SQLite with zero external database configuration, while remaining 100% compatible with PostgreSQL.
-* **Verification:** Test suite execution against both SQLite memory and PostgreSQL container.
-
----
-
-### Maintainability, Code Quality & Governance
-
-#### `NFR-005` Test Coverage Standards
-* **Priority:** `P0 - Mandatory MVP`
-* **Description:** Core backend domain, optimization, and state modules must maintain $\ge 85\%$ automated unit and integration test branch coverage.
-* **Verification:** `pytest-cov` reporting in CI pipeline.
-
-#### `NFR-006` Zero External Synthetic Contamination
-* **Priority:** `P0 - Mandatory MVP`
-* **Description:** No classified, operational, or proprietary military data or tactics may be committed or processed by the repository. All data schemas must be generic and synthetic.
-* **Verification:** Static analysis scan and documentation audit.
+* **`NFR-001` Optimization Runtime Bound:** The solver must terminate within user-configured limits (default 30 seconds for scenarios up to 100 tasks).
+* **`NFR-002` State Query Latency:** In-memory canonical state inspection must complete in $< 50$ms for up to 1,000 operational entities.
+* **`NFR-003` Determinism & Reproducibility:** Identical random seed, parameters, and solver configuration must produce byte-identical outputs across executions.
+* **`NFR-004` Persistence Portability:** Persistence layer must function out-of-the-box using SQLite with zero setup, maintaining 100% compatibility with PostgreSQL.
+* **`NFR-005` Test Coverage Standards:** Core backend domain, state, optimization, and simulation modules must maintain $\ge 85\%$ automated branch coverage.
+* **`NFR-006` Zero Operational Contamination:** Under no circumstances may classified, confidential, or proprietary military data or tactics be committed or processed.
+* **`NFR-007` Ingestion Threat Protection:** Decompression bomb guards (<50MB) and Zip-Slip path traversal mitigations must be enforced on all external archives.
+* **`NFR-008` Pure-Python Inference Deployment:** Predictive inference must execute on CPU in pure Python without requiring GPU accelerators or training dependencies.

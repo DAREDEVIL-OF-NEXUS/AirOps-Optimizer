@@ -1,116 +1,113 @@
 # AIRWISE Architectural Decision Log (ADR)
 
-This log records the foundational architectural decisions made for AIRWISE. Decisions are immutable once accepted; subsequent amendments must be recorded as superseding ADRs.
+**Project:** AIRWISE — AI-Enabled Dynamic Air Operations & Resource Optimisation  
+**SIH Problem Statement:** SIH 26250  
+**Document Status:** Complete & Authoritative (ADR-001 through ADR-012)  
+**Authors & Leads:** Lakshay Bharti, Nakshatra Yadav, Nidhi Jha  
 
 ---
 
 ## ADR-001: Modular Monolith vs. Distributed Microservices Architecture
-
 * **Status:** `ACCEPTED (Final)`
-* **Date / Milestone:** Phase 0 / Milestone 0
-* **Context:** The system requires tight coordination between data synthesis, state management, predictive inference, constraint solving, and persistence. Deploying these components as distributed microservices (e.g. separate Docker containers communicating over HTTP or message queues) introduces network overhead, serialized payloads, distributed transaction failure modes, and complex local orchestration.
-* **Options Considered:**
-  1. *Distributed Microservices:* Independent services for Generator, Predictor, Optimizer, and API, coordinated via RabbitMQ/Kafka.
-  2. *Modular Monolith:* A single cohesive Python codebase with strictly defined internal package boundaries (`domain`, `state`, `prediction`, `optimization`, `api`) communicating via in-process typed interfaces.
-* **Decision:** Implement a **Modular Monolith**.
-* **Rationale:** A modular monolith maximizes execution speed (in-memory state lookups and zero network latency for what-if branching), simplifies developer setup, and facilitates direct automated unit testing without mock infrastructure.
-* **Consequences & Trade-offs:**
-  - *Positive:* Fast development iteration, zero network latency, unified deployment, single codebase tooling.
-  - *Negative:* Long-running solver operations must be managed carefully using thread pools or background task executors within FastAPI to prevent blocking the event loop.
+* **Context:** The system requires rapid state cloning, sub-millisecond entity lookups, and fast re-optimization during what-if replanning. Microservices introduce serialization costs and network latency.
+* **Decision:** Implement a **Modular Monolith** with strictly bounded internal packages.
+* **Consequences:** Low deployment overhead, sub-millisecond state cloning, unified testing.
 
 ---
 
 ## ADR-002: Constraint Satisfaction & Optimization Engine
-
 * **Status:** `ACCEPTED (Final)`
-* **Date / Milestone:** Phase 0 / Milestone 0
-* **Context:** Resource allocation in air operations involves interval scheduling (take-off, cruise, landing, turnaround), discrete resource assignment (specific airframe and crew matching), and complex logical constraints (mandatory rest hours, qualification matching).
-* **Options Considered:**
-  1. *Google OR-Tools CP-SAT (Constraint Programming with SAT):* Highly specialized for interval scheduling, cumulative resource constraints, and non-linear logic.
-  2. *Mixed-Integer Linear Programming (MILP via SciPy / PuLP / CBC / Gurobi):* Standard linear programming approach; requires linearizing disjunctive temporal constraints (big-M formulations), which can degrade solver performance.
-  3. *Genetic Algorithms / Heuristics:* Fast for large problems, but cannot prove optimality or certify mathematical infeasibility.
-* **Decision:** Adopt **Google OR-Tools CP-SAT** as the primary solver, accompanied by a **Custom Deterministic Greedy Allocator** as a baseline.
-* **Rationale:** CP-SAT provides native interval variables (`NewIntervalVar`) and global scheduling constraints (`AddNoOverlap`), which excel at preventing scheduling conflicts without cumbersome big-M formulations. Google OR-Tools is open-source, robust, and actively maintained.
-* **Consequences & Trade-offs:**
-  - *Positive:* Global constraints yield faster solving and concise formulations; proven feasibility guarantees; built-in multi-threading.
-  - *Negative:* Objective values must be expressed as integers; continuous penalties (e.g. fractional minutes or costs) must be scaled to integer representations.
+* **Context:** Resource allocation requires interval scheduling, cumulative movement limits, and disjunctive non-overlapping constraints.
+* **Decision:** Adopt **Google OR-Tools CP-SAT** as the primary solver, accompanied by a **Deterministic Greedy Allocator** (Nidhi) as an honest comparative baseline.
+* **Consequences:** Native interval variables (`AddNoOverlap`), proven optimality bounds, multi-threaded search.
 
 ---
 
 ## ADR-003: Tabular Predictive Analytics Stack
-
 * **Status:** `ACCEPTED (Final)`
-* **Date / Milestone:** Phase 0 / Milestone 0
-* **Context:** The system needs to forecast airframe unscheduled maintenance risks and flight turnaround delays based on historical logs, ambient conditions, and fleet utilization metrics.
-* **Options Considered:**
-  1. *Deep Sequence Models (LSTM, Transformer):* High capacity, but require massive training corpuses, high compute, and exhibit black-box behavior and high inference latency.
-  2. *Gradient Boosted Decision Trees (LightGBM / scikit-learn HistGradientBoosting) & Linear Baselines (Ridge / Logistic Regression):* Industry standard for tabular operational data; fast training, low latency, easily calibrated, and highly interpretable.
-* **Decision:** Adopt **scikit-learn** and **LightGBM** with explicit probability calibration (Platt scaling / Isotonic regression).
-* **Rationale:** Operational tabular data does not justify deep learning bloat. Calibrated tree models offer superior accuracy, rapid inference ($< 20$ms), and clear feature importance metrics.
-* **Consequences & Trade-offs:**
-  - *Positive:* Tiny model artifact size, rapid CPU-only inference, zero GPU requirements.
-  - *Negative:* Does not model raw natural language pilot logs without an intermediate NLP extraction step.
+* **Context:** The system forecasts component failure risks and flight delays from tabular operational metrics.
+* **Decision:** Adopt **scikit-learn** and **LightGBM** with Platt/Isotonic probability calibration.
+* **Consequences:** Low latency (<20ms on CPU), small model artifacts, zero GPU requirements.
 
 ---
 
 ## ADR-004: In-Memory Canonical State with Relational Storage Backing
-
 * **Status:** `ACCEPTED (Final)`
-* **Date / Milestone:** Phase 0 / Milestone 0
-* **Context:** The interactive "What-If" simulation engine requires instantaneous cloning of the operational state, applying mutations, and re-running the solver without corrupting or incurring I/O overhead on disk storage.
-* **Options Considered:**
-  1. *Direct Database Queries on Every Operation:* Persist every state change immediately to disk; query tables during optimization.
-  2. *In-Memory Canonical State with Snapshotting & SQLite/PostgreSQL Backup:* Keep active operational state in memory using Python data structures; persist scenarios, event logs, and final plans to a relational database via SQLAlchemy.
-* **Decision:** Adopt **In-Memory Canonical State with Relational Persistence**.
-* **Rationale:** Memory cloning (`copy.deepcopy` or structured clone methods) runs in $< 5$ms, enabling near-instantaneous what-if sandbox branch creation. Relational persistence provides historical auditability.
-* **Consequences & Trade-offs:**
-  - *Positive:* High-speed what-if experimentation, clean separation between active runtime state and historical records.
-  - *Negative:* Application restart drops active uncommitted in-memory sandboxes; persistent scenarios must be reloaded on startup.
+* **Context:** What-if simulation requires near-instantaneous cloning of operational state.
+* **Decision:** Maintain active state in memory using Python data structures; persist scenarios, event streams, and benchmark logs to SQLite (local) or PostgreSQL (production) via SQLAlchemy 2.0.
+* **Consequences:** Sub-5ms state cloning for sandbox branches; persistent audit trail.
 
 ---
 
 ## ADR-005: Strict Decoupling of Prediction and Mathematical Optimization
-
 * **Status:** `ACCEPTED (Final)`
-* **Date / Milestone:** Phase 0 / Milestone 0
-* **Context:** A common failure mode in AI scheduling projects is using an LLM or predictive model to generate schedules directly, resulting in constraint hallucinations and physically impossible allocations.
-* **Options Considered:**
-  1. *End-to-end Machine Learning / Reinforcement Learning:* Train a neural policy to output schedules directly.
-  2. *Strict Functional Separation:* Machine learning predicts *risks and delays*; the mathematical solver ingests these estimates as objective weights and buffers to compute *allocations*.
-* **Decision:** Implement **Strict Functional Separation**.
-* **Rationale:** Mathematical constraint solvers guarantee hard constraint satisfaction (no two aircraft on the same runway at the same minute, no flight hours exceeding safety limits). Machine learning handles uncertainty estimation; mathematical programming handles constraint satisfaction.
-* **Consequences & Trade-offs:**
-  - *Positive:* Zero hallucinations, mathematically guaranteed feasibility, transparent auditability.
-  - *Negative:* Two distinct engineering disciplines (ML and Operations Research) must be integrated and maintained.
+* **Context:** Direct scheduling via ML or LLMs leads to constraint hallucinations and physically impossible allocations.
+* **Decision:** Implement **Strict Functional Separation**. ML estimates *risks and delays*; the mathematical solver ingests these estimates to compute *provably feasible allocations*.
+* **Consequences:** Guaranteed hard constraint satisfaction; auditable trade-offs.
 
 ---
 
-## ADR-006: Frontend Technology Architecture
-
+## ADR-006: Frontend Technology Architecture & Scope Boundary
 * **Status:** `ACCEPTED (Final)`
-* **Date / Milestone:** Phase 0 / Milestone 0
-* **Context:** Operational planners require a dense, highly responsive dashboard displaying Gantt timelines, resource health, and side-by-side comparison views.
-* **Options Considered:**
-  1. *Server-Side Rendered (Jinja2 / Streamlit / Dash):* Faster to prototype initially, but struggles with complex interactive drag-and-drop Gantt charts and responsive multi-panel diffing.
-  2. *Single Page Application (React 18 + TypeScript + Vite + Tailwind CSS):* High component reusability, rich ecosystem of timeline and charting libraries (Recharts), strict type safety.
-* **Decision:** Adopt **React 18 + TypeScript + Vite + Tailwind CSS**.
-* **Rationale:** High-density operational dashboards require fine-grained state management and fast DOM updates when toggling between what-if scenario branches.
-* **Consequences & Trade-offs:**
-  - *Positive:* Clean modern UI, rich component ecosystem, type safety across API client.
-  - *Negative:* Requires Node.js toolchain and separate build step.
+* **Context:** Operators require a dense, reactive dashboard. The frontend is developed by a dedicated external team.
+* **Decision:** Frontend is built with React 18, TypeScript, Vite, and Tailwind CSS. **Frontend implementation is outside the scope of the core three-person workstream.** Core team delivers typed API contracts and OpenAPI schemas.
+* **Consequences:** Core team focuses exclusively on data, ML, optimization, and simulation.
 
 ---
 
 ## ADR-007: Pure Synthetic Operational Data Policy
+* **Status:** `ACCEPTED (Final)`
+* **Context:** Air operations data is frequently sensitive or classified.
+* **Decision:** Adopt a **Pure Generative Synthetic Operational Data Policy**. No classified, confidential, or proprietary military data may be committed or processed.
+* **Consequences:** 100% public repository safe, freely reproducible, unrestricted parameter sweeping.
 
+---
+
+## ADR-008: 13-Phase Milestone-Driven Architecture Lifecycle
 * **Status:** `ACCEPTED (Final)`
 * **Date / Milestone:** Phase 0 / Milestone 0
-* **Context:** The system must model air operations and fleet logistics without violating operational security, non-disclosure agreements, or defense classification protocols.
-* **Options Considered:**
-  1. *Sanitized Real Data:* Attempting to redact real operational flight schedules.
-  2. *Pure Generative Synthetic Operational Data:* Formally generating all entities, coordinates, time windows, and resource parameters via procedural code.
-* **Decision:** Adopt **Pure Generative Synthetic Operational Data**.
-* **Rationale:** Eliminates all legal, classification, and security risks. Enables systematic parameter sweeping (e.g. generating scenarios with 10, 50, 100, 500 tasks) that real-world datasets rarely provide.
-* **Consequences & Trade-offs:**
-  - *Positive:* 100% public repository safe, freely shareable, perfectly reproducible, unrestricted experimentation.
-  - *Negative:* Synthetic data distributions must be carefully tuned to avoid trivial or unrealistic operational dynamics.
+* **Context:** The project requires a disciplined progression from external dataset auditing through domain modeling, solver construction, predictive modeling, what-if replanning, and release handoff.
+* **Decision:** Establish a formal **13-Phase Lifecycle** (Phases 0 through 12) mapping directly to Milestones M0 through M12.
+* **Consequences:** Clear task prerequisites, explicit quality gates, auditable progress tracking.
+
+---
+
+## ADR-009: Three-Person Mutually Exclusive & Collectively Exhaustive Workstream Partitioning
+* **Status:** `ACCEPTED (Final)`
+* **Date / Milestone:** Phase 0 / Milestone 0
+* **Context:** Three engineers (Lakshay Bharti, Nakshatra Yadav, Nidhi Jha) must implement the core system in parallel without modifying one another's source files or causing integration bottlenecks.
+* **Decision:** Partition the core codebase into three mutually exclusive workstreams:
+  - **Lakshay Bharti:** Optimization & ML Core (`src/optimization/`, `src/prediction/`).
+  - **Nakshatra Yadav:** Data Foundation & State Pipeline (`src/domain/`, `src/data/`, `src/generator/`, `src/state/`).
+  - **Nidhi Jha:** Validation, Baselines & Simulation (`src/baselines/`, `src/evaluation/`, `src/simulation/`, `experiments/`).
+* **Consequences:** Zero default file ownership overlap, balanced workload (21–22 days per engineer), clear interface hand-offs.
+
+---
+
+## ADR-010: Hybrid External-Synthetic Dataset Strategy (Option B)
+* **Status:** `ACCEPTED (Final)`
+* **Date / Milestone:** Phase 0 / Milestone 1
+* **Context:** Investigation of open datasets (TU Delft, NASA C-MAPSS, US BTS, ROADEF) revealed that no single public dataset contains joint aircraft-crew-task-runway operational data.
+* **Decision:** Adopt **Option B (Hybrid Strategy)**:
+  - Generate core integrated operational scenarios procedurally (`src/generator/`).
+  - Utilize NASA C-MAPSS and US BTS subsets strictly as auxiliary offline benchmarks for ML models.
+  - Utilize TU Delft and ROADEF instances strictly as optimization formulation references.
+* **Consequences:** Eliminates external runtime data dependencies while anchoring models against peer-reviewed academic benchmarks.
+
+---
+
+## ADR-011: Constraint Programming Interval Scheduling Formulation
+* **Status:** `ACCEPTED (Final)`
+* **Date / Milestone:** Phase 0 / Milestone 2
+* **Context:** Aircraft fleet scheduling involves non-overlapping disjunctive intervals and turnaround buffers. Formulating this in MILP requires large numbers of big-M binary variables, causing slow linear relaxations.
+* **Decision:** Use **OR-Tools CP-SAT Interval Variables** (`NewIntervalVar`, `AddNoOverlap`) as the primary solver formulation, while retaining an optional MILP comparison in `src/optimization/milp_solver.py`.
+* **Consequences:** Faster solving times, compact constraint representation, native interval propagation.
+
+---
+
+## ADR-012: Deferred Per-Person Phases and Checklists Workflow
+* **Status:** `ACCEPTED (Final)`
+* **Date / Milestone:** Phase 0 / Milestone 0
+* **Context:** Creating individual checklist files prematurely risks architectural divergence before feature branch initialization.
+* **Decision:** Defer the creation of individual phase and checklist files (`PHASES_<NAME>.md`, `CHECKLIST_<NAME>.md`) until each engineer begins feature implementation. No root `checklist.md` is created.
+* **Consequences:** Ensures individual plans are derived directly from the final approved shared blueprints.
