@@ -12,6 +12,7 @@ from src.optimization.diagnostics import (
     InfeasibilityReport,
 )
 from src.optimization.milp_solver import MILPOptimizationSolver
+from src.optimization.risk_aware_solver import RiskAwareOptimizationSolver
 from src.optimization.solver_config import SolverConfig
 from src.optimization.solver_interface import (
     OptimizationResult,
@@ -27,6 +28,7 @@ __all__ = [
     "InfeasibilityReport",
     "MILPOptimizationSolver",
     "OptimizationResult",
+    "RiskAwareOptimizationSolver",
     "SolverConfig",
     "SolverInterface",
     "SolverStatus",

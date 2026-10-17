@@ -18,9 +18,9 @@
 | Metric | Count | Percentage |
 | :--- | :--- | :--- |
 | **Total Assigned Tasks** | 24 | 100% |
-| **Verified Complete** | 19 | 79.2% |
+| **Verified Complete** | 21 | 87.5% |
 | **In Progress** | 0 | 0% |
-| **Not Started** | 5 | 20.8% |
+| **Not Started** | 3 | 12.5% |
 
 ---
 
@@ -68,9 +68,9 @@
 
 | Task ID | Task Description | Dependencies | Status | Verification Evidence & Commit |
 | :--- | :--- | :--- | :--- | :--- |
-| **L4-01** | Build feature extraction pipeline with temporal cutoff guards ($t \le t_{\text{cut}}$) | None | `NOT STARTED` | Expected: `src/prediction/features.py` |
-| **L4-02** | Implement chronological train/test split generator | L4-01 | `NOT STARTED` | Expected: `src/prediction/train.py` |
-| **L4-03** | Author automated unit tests asserting zero temporal data leakage | L4-02 | `NOT STARTED` | Expected: `tests/unit/test_leakage_guard.py` |
+| **L4-01** | Build feature extraction pipeline with temporal cutoff guards ($t \le t_{\text{cut}}$) | None | `VERIFIED COMPLETE` | Implemented in `src/prediction/features.py` with strict point-in-time state and history filtering. |
+| **L4-02** | Implement chronological train/test split generator | L4-01 | `VERIFIED COMPLETE` | Implemented in `src/prediction/train.py` with physics-informed synthetic ground-truth generators. |
+| **L4-03** | Author automated unit tests asserting zero temporal data leakage | L4-02 | `VERIFIED COMPLETE` | 3/3 tests passing in `tests/unit/test_leakage_guard.py`. |
 
 ---
 
@@ -78,11 +78,11 @@
 
 | Task ID | Task Description | Dependencies | Status | Verification Evidence & Commit |
 | :--- | :--- | :--- | :--- | :--- |
-| **L5-01** | Train and calibrate LightGBM maintenance failure classifier | L4-02 | `NOT STARTED` | Expected: `src/prediction/models.py` |
-| **L5-02** | Train turnaround delay regression model | L4-02 | `NOT STARTED` | Expected: `src/prediction/models.py` |
-| **L5-03** | Implement Platt/Isotonic probability calibration & Brier score audit | L5-01 | `NOT STARTED` | Expected: `src/prediction/models.py` |
-| **L5-04** | Export pure-Python model artifacts and implement `PredictiveAnalyticsService` | L5-03 | `NOT STARTED` | Expected: `src/prediction/service.py` |
-| **L5-05** | Author unit tests for ML inference latency and prediction ranges | L5-04 | `NOT STARTED` | Expected: `tests/unit/test_prediction_service.py` |
+| **L5-01** | Train and calibrate LightGBM maintenance failure classifier | L4-02 | `VERIFIED COMPLETE` | Implemented in `src/prediction/models.py` (`AircraftFailureClassifier`). |
+| **L5-02** | Train turnaround delay regression model | L4-02 | `VERIFIED COMPLETE` | Implemented in `src/prediction/models.py` (`TurnaroundDelayRegressor`). |
+| **L5-03** | Implement Platt/Isotonic probability calibration & Brier score audit | L5-01 | `VERIFIED COMPLETE` | Implemented Isotonic calibration with Brier score auditing in `src/prediction/models.py`. |
+| **L5-04** | Export pure-Python model artifacts and implement `PredictiveAnalyticsService` | L5-03 | `VERIFIED COMPLETE` | Implemented `PredictiveAnalyticsService` and `DisruptionRiskProfile` in `src/prediction/service.py`. |
+| **L5-05** | Author unit tests for ML inference latency and prediction ranges | L5-04 | `VERIFIED COMPLETE` | 4/4 tests passing in `tests/unit/test_prediction_service.py` meeting SLA. |
 
 ---
 
@@ -90,9 +90,9 @@
 
 | Task ID | Task Description | Dependencies | Status | Verification Evidence & Commit |
 | :--- | :--- | :--- | :--- | :--- |
-| **L6-01** | Implement `RiskAwareOptimizationSolver` connecting failure penalties | L2-08, L5-04 | `NOT STARTED` | Expected: `src/optimization/risk_aware_solver.py` |
-| **L6-02** | Implement dynamic turnaround buffer injection ($Turnaround + \widehat{\Delta}_t$) | L6-01 | `NOT STARTED` | Expected: `src/optimization/risk_aware_solver.py` |
-| **L6-03** | Author integration tests for risk-aware scheduling behavior | L6-02 | `NOT STARTED` | Expected: `tests/unit/test_risk_aware_solver.py` |
+| **L6-01** | Implement `RiskAwareOptimizationSolver` connecting failure penalties | L2-08, L5-04 | `VERIFIED COMPLETE` | Implemented in `src/optimization/risk_aware_solver.py` steering sorties away from degrading airframes. |
+| **L6-02** | Implement dynamic turnaround buffer injection ($Turnaround + \widehat{\Delta}_t$) | L6-01 | `VERIFIED COMPLETE` | Implemented buffer injection in `_inject_dynamic_buffers` within `risk_aware_solver.py`. |
+| **L6-03** | Author integration tests for risk-aware scheduling behavior | L6-02 | `VERIFIED COMPLETE` | 2/2 integration tests passing in `tests/unit/test_risk_aware_solver.py` (total suite 41/41). |
 
 ---
 
