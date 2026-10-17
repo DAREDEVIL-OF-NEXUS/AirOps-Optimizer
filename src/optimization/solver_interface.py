@@ -10,7 +10,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class SolverStatus(str, Enum):
@@ -120,7 +120,7 @@ class OptimizationResult:
         """Count of unassigned or rejected tasks."""
         return len(self.unassigned_task_ids)
 
-    def get_assignment_for_task(self, task_id: str) -> Optional[TaskAssignment]:
+    def get_assignment_for_task(self, task_id: str) -> TaskAssignment | None:
         """Retrieve assignment record for a specific task ID, if present."""
         for assignment in self.assignments:
             if assignment.task_id == task_id:

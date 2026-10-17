@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -58,7 +58,7 @@ class SolverConfig:
         """Convert config to dictionary representation."""
         return asdict(self)
 
-    def to_yaml(self, path: Optional[Path | str] = None) -> str:
+    def to_yaml(self, path: Path | str | None = None) -> str:
         """Serialize configuration to a YAML string or write to file."""
         content = yaml.dump(self.to_dict(), default_flow_style=False, sort_keys=False)
         if path:

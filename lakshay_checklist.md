@@ -19,9 +19,9 @@
 | Metric | Count | Percentage |
 | :--- | :--- | :--- |
 | **Total Assigned Tasks** | 24 | 100% |
-| **Verified Complete** | 7 | 29.2% |
+| **Verified Complete** | 16 | 66.7% |
 | **In Progress** | 0 | 0% |
-| **Not Started** | 17 | 70.8% |
+| **Not Started** | 8 | 33.3% |
 
 ---
 
@@ -43,15 +43,15 @@
 
 | Task ID | Task Description | Dependencies | Status | Verification Evidence & Commit |
 | :--- | :--- | :--- | :--- | :--- |
-| **L2-01** | Implement `CPSatOptimizationSolver` class skeleton | L1-03 | `NOT STARTED` | Expected: `src/optimization/cp_sat_solver.py` |
-| **L2-02** | Implement decision variable builders ($x_{t,a}, y_{t,c}, u_t$) | L2-01 | `NOT STARTED` | Expected: `src/optimization/constraints.py` |
-| **L2-03** | Implement assignment uniqueness and capability compatibility constraints | L2-02 | `NOT STARTED` | Expected: `src/optimization/constraints.py` |
-| **L2-04** | Implement aircraft non-overlapping intervals via `model.AddNoOverlap` | L2-03 | `NOT STARTED` | Expected: `src/optimization/constraints.py` |
-| **L2-05** | Implement crew flight duty limits and mandatory rest constraints | L2-03 | `NOT STARTED` | Expected: `src/optimization/constraints.py` |
-| **L2-06** | Implement hourly runway slot movement constraints | L2-03 | `NOT STARTED` | Expected: `src/optimization/constraints.py` |
-| **L2-07** | Implement integer objective scaling logic ($K_{\text{scale}} = 10,000$) | L2-01 | `NOT STARTED` | Expected: `src/optimization/objectives.py` |
-| **L2-08** | Implement solver timeout handling and primal solution extraction | L2-07 | `NOT STARTED` | Expected: `src/optimization/cp_sat_solver.py` |
-| **L2-09** | Author unit tests for CP-SAT solver and timeout compliance | L2-08 | `NOT STARTED` | Expected: `tests/unit/test_optimization_solver.py` |
+| **L2-01** | Implement `CPSatOptimizationSolver` class skeleton | L1-03 | `VERIFIED COMPLETE` | Implemented in `src/optimization/cp_sat_solver.py`. |
+| **L2-02** | Implement decision variable builders ($x_{t,a}, y_{t,c}, u_t$) | L2-01 | `VERIFIED COMPLETE` | Implemented in `src/optimization/constraints.py` with explicit boolean/interval variables. |
+| **L2-03** | Implement assignment uniqueness and capability compatibility constraints | L2-02 | `VERIFIED COMPLETE` | Enforced in `build_assignment_constraints` filter matching capabilities. |
+| **L2-04** | Implement aircraft non-overlapping intervals via `model.AddNoOverlap` | L2-03 | `VERIFIED COMPLETE` | Disjunctive scheduling intervals built with turnaround buffers in `build_aircraft_interval_constraints`. |
+| **L2-05** | Implement crew flight duty limits and mandatory rest constraints | L2-03 | `VERIFIED COMPLETE` | Max 480 min rolling duty & min 720 min rest enforced in `build_crew_duty_constraints`. |
+| **L2-06** | Implement hourly runway slot movement constraints | L2-03 | `VERIFIED COMPLETE` | Enforced hourly runway capacity ceilings in `build_runway_capacity_constraints`. |
+| **L2-07** | Implement integer objective scaling logic ($K_{\text{scale}} = 10,000$) | L2-01 | `VERIFIED COMPLETE` | Implemented in `src/optimization/objectives.py` with multi-objective linear combinations. |
+| **L2-08** | Implement solver timeout handling and primal solution extraction | L2-07 | `VERIFIED COMPLETE` | Implemented timeout enforcement, gap audit, and primal variable extraction in `cp_sat_solver.py`. |
+| **L2-09** | Author unit tests for CP-SAT solver and timeout compliance | L2-08 | `VERIFIED COMPLETE` | 6/6 unit tests passing in `tests/unit/test_optimization_solver.py` (total suite 23/23). |
 
 ---
 

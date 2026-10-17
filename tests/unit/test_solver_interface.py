@@ -5,6 +5,7 @@ SolverConfig bounds checking, and YAML configuration loading.
 """
 
 from pathlib import Path
+
 import pytest
 
 from src.optimization.solver_config import SolverConfig
