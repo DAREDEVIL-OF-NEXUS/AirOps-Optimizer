@@ -18,9 +18,9 @@
 | Metric | Count | Percentage |
 | :--- | :--- | :--- |
 | **Total Assigned Tasks** | 24 | 100% |
-| **Verified Complete** | 21 | 87.5% |
+| **Verified Complete** | 24 | 100% |
 | **In Progress** | 0 | 0% |
-| **Not Started** | 3 | 12.5% |
+| **Not Started** | 0 | 0% |
 
 ---
 
@@ -100,6 +100,6 @@
 
 | Task ID | Task Description | Dependencies | Status | Verification Evidence & Commit |
 | :--- | :--- | :--- | :--- | :--- |
-| **L7-01** | Execute comparative benchmark: Reactive vs Prediction-Aware allocation | L6-02 | `NOT STARTED` | Expected: `experiments/reports/prediction_value.md` |
-| **L7-02** | Author frontend handoff specifications and export OpenAPI schemas | L1-03 | `NOT STARTED` | Expected: `docs/FRONTEND_HANDOFF.md` |
-| **L7-03** | Author contract validation tests for frontend integration | L7-02 | `NOT STARTED` | Expected: `tests/integration/test_frontend_contracts.py` |
+| **L7-01** | Execute comparative benchmark: Reactive vs Prediction-Aware allocation | L6-02 | `VERIFIED COMPLETE` | 30-scenario simulation executed; documented in `experiments/reports/prediction_value.md` (-36.4% disruptions). |
+| **L7-02** | Author frontend handoff specifications and export OpenAPI schemas | L1-03 | `VERIFIED COMPLETE` | Published frozen JSON payloads and TypeScript types in `docs/FRONTEND_HANDOFF.md`. |
+| **L7-03** | Author contract validation tests for frontend integration | L7-02 | `VERIFIED COMPLETE` | 3/3 integration tests passing in `tests/integration/test_frontend_contracts.py` (total suite 44/44). |
